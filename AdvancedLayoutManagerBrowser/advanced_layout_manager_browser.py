@@ -150,7 +150,7 @@ QT_ITEM_DROP_ENABLED = _qt_enum("ItemFlag", "ItemIsDropEnabled")
 QT_ITEM_EDITABLE = _qt_enum("ItemFlag", "ItemIsEditable")
 QT_ITEM_DRAG_ENABLED = _qt_enum("ItemFlag", "ItemIsDragEnabled")
 
-TREE_SINGLE_SELECTION = _class_enum(QAbstractItemView, "SelectionMode", "SingleSelection")
+TREE_EXTENDED_SELECTION = _class_enum(QAbstractItemView, "SelectionMode", "ExtendedSelection")
 TREE_INTERNAL_MOVE = _class_enum(QAbstractItemView, "DragDropMode", "InternalMove")
 
 ROLE_TYPE = _item_role(0)
@@ -338,7 +338,7 @@ class AdvancedLayoutManagerBrowserDock(QDockWidget):
         self.tree.setHeaderHidden(True)
         self.tree.setIndentation(18)
         self.tree.setContextMenuPolicy(QT_CUSTOM_CONTEXT_MENU)
-        self.tree.setSelectionMode(TREE_SINGLE_SELECTION)
+        self.tree.setSelectionMode(TREE_EXTENDED_SELECTION)
         self.tree.setDragDropMode(TREE_INTERNAL_MOVE)
         self.tree.setDefaultDropAction(QT_MOVE_ACTION)
         self.tree.setAlternatingRowColors(True)
@@ -715,6 +715,18 @@ class AdvancedLayoutManagerBrowserDock(QDockWidget):
         if not item or item.data(0, ROLE_TYPE) != ITEM_LAYOUT:
             return None
         return item.data(0, ROLE_VALUE)
+    
+    def _selected_layout_names(self):
+        """Return all selected layout names, preserving tree selection order."""
+        layout_names = []
+
+        for item in self.tree.selectedItems():
+            if item.data(0, ROLE_TYPE) == ITEM_LAYOUT:
+                layout_name = item.data(0, ROLE_VALUE)
+                if layout_name and layout_name not in layout_names:
+                    layout_names.append(layout_name)
+
+        return layout_names
 
     def _selected_group_path(self):
         item = self._selected_item()
@@ -892,39 +904,74 @@ class AdvancedLayoutManagerBrowserDock(QDockWidget):
         self.refresh_tree()
 
     def delete_selected_layout(self):
-        layout_name = self._selected_layout_name()
-        if not layout_name:
+        layout_names = self._selected_layout_names()
+        if not layout_names:
             return
 
-        layout = self._find_layout_by_name(layout_name)
-        if not layout:
+        existing_layouts = [
+            name for name in layout_names
+            if self._find_layout_by_name(name)
+        ]
+
+        if not existing_layouts:
             self.refresh_tree()
             return
 
+        if len(existing_layouts) == 1:
+            message = (
+                f"Delete layout '{existing_layouts[0]}'?\n\n"
+                "This removes the real QGIS layout from the project."
+            )
+        else:
+            message = (
+                f"Delete {len(existing_layouts)} selected layouts?\n\n"
+                "This removes the real QGIS layouts from the project."
+            )
+
         answer = QMessageBox.question(
             self,
-            "Delete Layout",
-            f"Delete layout '{layout_name}'?\n\nThis removes the real QGIS layout from the project.",
+            "Delete Layouts",
+            message,
             _messagebox_button("Yes") | _messagebox_button("No"),
             _messagebox_button("No")
         )
         if answer != _messagebox_button("Yes"):
             return
 
-        self.layout_manager.removeLayout(layout)
+        for layout_name in existing_layouts:
+            layout = self._find_layout_by_name(layout_name)
+            if layout:
+                self.layout_manager.removeLayout(layout)
 
         group_data = self._read_layout_to_group()
-        group_data.pop(layout_name, None)
+        for layout_name in existing_layouts:
+            group_data.pop(layout_name, None)
         self._write_layout_to_group(group_data)
 
-        favs = [name for name in self._read_favourites() if name != layout_name]
+        favs = [
+            name for name in self._read_favourites()
+            if name not in existing_layouts
+        ]
         self._write_favourites(favs)
+
         self.refresh_tree()
 
     def move_selected_layout_to_group(self):
-        layout_name = self._selected_layout_name()
-        if not layout_name:
+        layout_names = self._selected_layout_names()
+        if not layout_names:
             return
+
+        group_paths = self._all_group_paths(include_ungrouped=True)
+        dialog = MoveToGroupDialog(self, group_paths)
+        if _exec_dialog(dialog) != _dialog_accepted():
+            return
+
+        target = dialog.selected_group_path()
+
+        for layout_name in layout_names:
+            self._assign_layout_to_group(layout_name, target, refresh=False)
+
+        self.refresh_tree()
 
         group_paths = self._all_group_paths(include_ungrouped=True)
         dialog = MoveToGroupDialog(self, group_paths)
@@ -935,15 +982,18 @@ class AdvancedLayoutManagerBrowserDock(QDockWidget):
         self._assign_layout_to_group(layout_name, target)
 
     def toggle_selected_favourite(self):
-        layout_name = self._selected_layout_name()
-        if not layout_name:
+        layout_names = self._selected_layout_names()
+        if not layout_names:
             return
 
         favs = self._read_favourites()
-        if layout_name in favs:
-            favs.remove(layout_name)
-        else:
-            favs.append(layout_name)
+
+        for layout_name in layout_names:
+            if layout_name in favs:
+                favs.remove(layout_name)
+            else:
+                favs.append(layout_name)
+
         self._write_favourites(favs)
         self.refresh_tree()
 
@@ -1124,7 +1174,10 @@ class AdvancedLayoutManagerBrowserDock(QDockWidget):
         if item is None:
             return
 
-        self.tree.setCurrentItem(item)
+        if not item.isSelected():
+            self.tree.clearSelection()
+            self.tree.setCurrentItem(item)
+            item.setSelected(True)
         item_type = item.data(0, ROLE_TYPE)
         menu = QMenu(self)
 
