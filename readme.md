@@ -174,9 +174,9 @@ GPL-2.0-or-later
 
 ---
 
-## Author
+## Authors
 
-Valerio Pinna
+Valerio Pinna & Isaac Thompson
 
 Pre-Construct Archaeology (PCA)
 
