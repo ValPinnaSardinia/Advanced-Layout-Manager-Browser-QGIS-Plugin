@@ -287,9 +287,11 @@ class LayoutTreeWidget(QTreeWidget):
 
         if callable(self.drop_finished_callback):
             QTimer.singleShot(0, self.drop_finished_callback)
+            
 # ---------------------------------------------------------------------
 # Dock widget
 # ---------------------------------------------------------------------
+
 
 class AdvancedLayoutManagerBrowserDock(QDockWidget):
     """Right dock panel for grouped QGIS print layouts."""
@@ -365,7 +367,7 @@ class AdvancedLayoutManagerBrowserDock(QDockWidget):
         button_row_3.addWidget(self.btn_export_group)
         button_row_3.addWidget(self.btn_refresh)
         main_layout.addLayout(button_row_3)
-        
+
         button_row_4 = QHBoxLayout()
         self.btn_help = QPushButton("Help")
         button_row_4.addStretch()
@@ -957,29 +959,21 @@ class AdvancedLayoutManagerBrowserDock(QDockWidget):
         self.refresh_tree()
 
     def move_selected_layout_to_group(self):
-        layout_names = self._selected_layout_names()
-        if not layout_names:
-            return
+            layout_names = self._selected_layout_names()
+            if not layout_names:
+                return
 
-        group_paths = self._all_group_paths(include_ungrouped=True)
-        dialog = MoveToGroupDialog(self, group_paths)
-        if _exec_dialog(dialog) != _dialog_accepted():
-            return
+            group_paths = self._all_group_paths(include_ungrouped=True)
+            dialog = MoveToGroupDialog(self, group_paths)
+            if _exec_dialog(dialog) != _dialog_accepted():
+                return
 
-        target = dialog.selected_group_path()
+            target = dialog.selected_group_path()
 
-        for layout_name in layout_names:
-            self._assign_layout_to_group(layout_name, target, refresh=False)
+            for layout_name in layout_names:
+                self._assign_layout_to_group(layout_name, target, refresh=False)
 
-        self.refresh_tree()
-
-        group_paths = self._all_group_paths(include_ungrouped=True)
-        dialog = MoveToGroupDialog(self, group_paths)
-        if _exec_dialog(dialog) != _dialog_accepted():
-            return
-
-        target = dialog.selected_group_path()
-        self._assign_layout_to_group(layout_name, target)
+            self.refresh_tree()
 
     def toggle_selected_favourite(self):
         layout_names = self._selected_layout_names()

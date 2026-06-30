@@ -6,11 +6,10 @@
 name=Advanced Layout Manager Browser
 qgisMinimumVersion=3.0
 qgisMaximumVersion=4.99
-supportsQt6=True
 
 description=Organise QGIS print layouts into custom groups and subgroups using a dockable browser with search, favourites and project-level storage.
-version=1.00
-author=Valerio Pinna
+version=1.01
+author=Valerio Pinna & Isaac Thompson
 email=pinnavalerio@yahoo.co.uk
 
 about=Layout Manager Browser is a QGIS productivity plugin designed to improve the management of print layouts in projects containing large numbers of figures, plans and report outputs. The plugin introduces custom groups and subgroups, search tools, favourites, colour-coded categories and batch export capabilities. Group information is stored safely within the QGIS project file, allowing project organisation to be shared between users while keeping layouts as standard QGIS layouts. Compatible with QGIS 3.x, QGIS 4.x, Qt5 and Qt6.
@@ -23,14 +22,16 @@ repository=https://github.com/ValPinnaSardinia/Advanced-Layout-Manager-Browser-Q
 
 hasProcessingProvider=no
 # Uncomment the following line and add your changelog:
-changelog=<strong>1.00</strong>
- - First public release<br>
- - Organise print layouts using custom groups and subgroups<br>
+changelog=<strong>1.01</strong>
+ - Added support for multi-layout selection, allowing batch move, delete and favourite operations. (Contributed by Isaac Thompson)
+ <p><strong>1.00</strong>
+ - First public release
+ - Organise print layouts using custom groups and subgroups
  - Search, favourites and drag-and-drop management<br>
- - Create, open and export layouts directly from the browser<br>
- - Colour-coded groups with layout counters<br>
- - Project-based storage shared with other users of the same project<br>
- - Compatible with QGIS 3.28+ and QGIS 4<br>
+ - Create, open and export layouts directly from the browser
+ - Colour-coded groups with layout counters
+ - Project-based storage shared with other users of the same project
+ - Compatible with QGIS 3.28+ and QGIS 4
 
 # Tags are comma separated with spaces allowed
 tags=python, layout, layouts, layout manager,print layout, print composer, pdf
